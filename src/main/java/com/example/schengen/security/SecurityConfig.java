@@ -37,7 +37,8 @@ public class SecurityConfig {
                                                 "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"))
                                 .referrerPolicy(r -> r.policy(
                                                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                                .permissionsPolicy(p -> p.policy("geolocation=(), microphone=(), camera=()")));
+                                .permissionsPolicyHeader(permissions -> permissions
+                                                .policy("geolocation=(), microphone=(), camera=()")));
 
                 http.formLogin(login -> login
                                 .loginPage("/login").permitAll()
@@ -69,14 +70,6 @@ public class SecurityConfig {
         @Bean
         public PasswordEncoder passwordEncoder() {
                 return new BCryptPasswordEncoder();
-        }
-
-        @Bean
-        public DaoAuthenticationProvider authProvider(UserDetailsService uds, PasswordEncoder encoder) {
-                DaoAuthenticationProvider p = new DaoAuthenticationProvider();
-                p.setUserDetailsService(uds);
-                p.setPasswordEncoder(encoder);
-                return p;
         }
 
         @Bean

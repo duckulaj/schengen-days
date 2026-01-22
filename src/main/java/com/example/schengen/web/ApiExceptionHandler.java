@@ -38,16 +38,17 @@ public class ApiExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest req,
-                                               List<ErrorResponse.FieldError> fields) {
+            List<ErrorResponse.FieldError> fields) {
         ErrorResponse body = new ErrorResponse(
                 OffsetDateTime.now(),
                 status.value(),
                 status.getReasonPhrase(),
                 message,
                 req.getRequestURI(),
-                fields
-        );
-        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(body);
+                fields);
+        return ResponseEntity.status(status)
+                .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_JSON))
+                .body(body);
     }
 
     private ErrorResponse.FieldError toFieldError(FieldError fe) {
