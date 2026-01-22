@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Register</title>
+  <link rel="stylesheet" th:href="@{/css/theme.css}"/>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 520px; margin: 48px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; }
+    label { display:block; margin-top: 10px; }
+    input { width: 100%; padding: 10px; font-size: 14px; }
+    button { margin-top: 14px; padding: 10px 12px; }
+    .msg { margin-top: 12px; color: #b00020; white-space: pre-wrap; }
+    .muted { color:#666; font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Create account</h1>
+
+    <div class="msg" th:if="${registerError}" th:text="${registerError}"></div>
+
+    <form th:action="@{/register}" method="post" th:object="${form}">
+      <div class="msg" th:if="${#fields.hasErrors('*')}">
+        Please fix the highlighted fields.
+      </div>
+      <label>Username</label>
+      <input th:field="*{username}" autocomplete="username" required/>
+      <div class="msg" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+
+      <label>Email</label>
+      <input th:field="*{email}" autocomplete="email" required/>
+      <div class="msg" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+
+      <label>Password</label>
+      <input th:field="*{password}" type="password" autocomplete="new-password" required/>
+      <div class="msg" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+
+      <button type="submit">Register</button>
+      <div class="muted">Password policy: min 10 chars; include 3 of lower/upper/digit/symbol.</div>
+    </form>
+
+    <a th:href="@{/login}">Back to login</a>
+  </div>
+<script th:src="@{/js/theme-toggle.js}"></script>
+</body>
+</html>

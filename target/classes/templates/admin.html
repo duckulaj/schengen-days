@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin</title>
+  <link rel="stylesheet" th:href="@{/css/theme.css}"/>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; text-align:left; }
+  </style>
+</head>
+<body>
+<h1>Admin</h1>
+<p><a th:href="@{/}">Back to app</a></p>
+<table>
+  <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Enabled</th></tr></thead>
+  <tbody>
+    <tr th:each="u : ${users}">
+      <td th:text="${u.username}"></td>
+      <td th:text="${u.email}"></td>
+      <td th:text="${u.role}"></td>
+      <td th:text="${u.enabled}"></td>
+    </tr>
+  </tbody>
+</table>
+<script th:src="@{/js/theme-toggle.js}"></script>
+</body>
+</html>
