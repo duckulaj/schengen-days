@@ -8,12 +8,12 @@
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <link rel="stylesheet" th:href="@{/css/theme.css}"/>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 16px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; padding: 0 16px; }
+    .row { display: flex; gap: var(--row-gap); flex-wrap: wrap; align-items: end; }
     label { display: block; font-size: 14px; margin-bottom: 6px; }
     input, select { padding: 8px; font-size: 14px; }
     button { padding: 9px 12px; font-size: 14px; cursor: pointer; }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    /* .card styles removed here as they are now in theme.css */
     .stat { font-size: 18px; }
     .error { color: #b00020; white-space: pre-wrap; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }

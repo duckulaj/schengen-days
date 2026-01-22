@@ -21,6 +21,33 @@
     return LIGHT_THEME;
   }
 
+  // Detect device type based on user agent and screen width
+  function detectDeviceType() {
+    const ua = navigator.userAgent;
+    const width = window.innerWidth;
+
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+      return 'tablet';
+    }
+    
+    if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpwOS)/i.test(ua)) {
+      return 'mobile';
+    }
+
+    // Secondary check based on width if UA detection is ambiguous
+    if (width <= 600) return 'mobile';
+    if (width <= 1024) return 'tablet';
+    
+    return 'pc';
+  }
+
+  // Apply device theme
+  function applyDeviceTheme() {
+    const deviceType = detectDeviceType();
+    document.documentElement.setAttribute('data-device', deviceType);
+    console.log('Detected device type:', deviceType);
+  }
+
   // Apply theme to document
   function applyTheme(theme) {
     if (theme === DARK_THEME) {
@@ -60,6 +87,7 @@
   // Initialize theme immediately (prevent FOUC)
   const initialTheme = getInitialTheme();
   applyTheme(initialTheme);
+  applyDeviceTheme();
 
   // Setup toggle button when DOM is ready
   if (document.readyState === 'loading') {

@@ -30,10 +30,15 @@
     <input name="username" autocomplete="username" required/>
 
     <label>Password</label>
-    <input name="password" type="password" autocomplete="current-password" required/>
+    <div style="position: relative;">
+      <input id="password" name="password" type="password" autocomplete="current-password" required style="padding-right: 40px;"/>
+      <span id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; user-select: none;">
+        👁️
+      </span>
+    </div>
 
     <div class="row">
-      <input id="remember-me" name="remember-me" type="checkbox"/>
+      <input id="remember-me" name="remember-me" type="checkbox" style="width: auto;"/>
       <label for="remember-me" style="margin:0;">Remember me</label>
     </div>
 
@@ -43,6 +48,20 @@
   <a th:href="@{/register}">Create an account</a><br/>
   <a th:href="@{/forgot-password}">Forgot password?</a>
 </div>
+<script>
+  (function() {
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+
+    if (togglePassword && password) {
+      togglePassword.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.textContent = type === 'password' ? '👁️' : '🙈';
+      });
+    }
+  })();
+</script>
 <script th:src="@{/js/theme-toggle.js}"></script>
 </body>
 </html>

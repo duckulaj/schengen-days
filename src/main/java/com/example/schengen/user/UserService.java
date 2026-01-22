@@ -17,8 +17,13 @@ public class UserService {
 
     @Transactional
     public void register(RegisterRequest req) {
-        String username = req.username().trim();
-        String email = req.email().trim();
+        createUser(req.username(), req.email(), req.password(), "USER");
+    }
+
+    @Transactional
+    public void createUser(String username, String email, String password, String role) {
+        username = username.trim();
+        email = email.trim();
 
         if (!username.matches("^[A-Za-z0-9._-]{3,50}$")) {
             throw new IllegalArgumentException("Username must be 3-50 chars: letters, numbers, . _ -");
@@ -26,13 +31,40 @@ public class UserService {
         if (repo.existsByUsername(username)) {
             throw new IllegalArgumentException("Username already taken.");
         }
-        // Basic email sanity check. For stricter validation use a library.
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             throw new IllegalArgumentException("Please enter a valid email address.");
         }
 
-        UserEntity user = new UserEntity(username, encoder.encode(req.password()), "USER");
+        UserEntity user = new UserEntity(username, encoder.encode(password), role);
         user.setEmail(email);
         repo.save(user);
+    }
+
+    @Transactional
+    public void updateUser(Long id, String email, String role, boolean enabled, String password) {
+        UserEntity user = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        email = email.trim();
+        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            throw new IllegalArgumentException("Please enter a valid email address.");
+        }
+
+        user.setEmail(email);
+        user.setRole(role);
+        user.setEnabled(enabled);
+
+        if (password != null && !password.isBlank()) {
+            user.setPasswordHash(encoder.encode(password));
+        }
+
+        repo.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        if (!repo.existsById(id)) {
+            throw new IllegalArgumentException("User not found");
+        }
+        repo.deleteById(id);
     }
 }
