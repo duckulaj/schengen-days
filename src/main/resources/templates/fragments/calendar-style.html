@@ -102,6 +102,28 @@
     .range-cal-actions button { font-size: 13px; padding: 6px 12px; border-radius: 6px; border: none; font-weight: 500; }
     #calClear { background: transparent; color: #666; text-decoration: underline; }
     #calApply { background: #1a1a1a; color: white; } /* Keep white text for primary button */
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 650px) {
+      .range-calendar {
+        width: 300px; /* Fit single month */
+        left: 50%;
+        transform: translateX(-50%); /* Center on small screens if needed, or keep left aligned but smaller */
+        padding: 12px;
+      }
+      .range-months-container {
+        flex-direction: column;
+        gap: 0;
+      }
+      /* Hide the second month completely */
+      .range-month:nth-child(2) {
+        display: none;
+      }
+      /* Adjust header actions if needed */
+      .range-cal-header {
+        margin-bottom: 12px;
+      }
+    }
     </style>
 </head>
 <body></body>
