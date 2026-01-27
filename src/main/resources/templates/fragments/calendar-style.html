@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style th:fragment="style">
+    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; padding: 0 16px; }
+    .row { display: flex; gap: var(--row-gap); flex-wrap: wrap; align-items: end; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input, select { padding: 8px; font-size: 14px; }
+    button { padding: 9px 12px; font-size: 14px; cursor: pointer; }
+    /* .card styles removed here as they are now in theme.css */
+    .stat { font-size: 18px; }
+    .error { color: #b00020; white-space: pre-wrap; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; vertical-align: top; }
+    .muted { color: #666; font-size: 13px; }
+    .pager { display:flex; gap: 8px; align-items:center; margin-top: 10px; }
+    .actions { display:flex; gap: 8px; flex-wrap: wrap; }
+    .pill { display:inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
+    .inline-input { width: 155px; }
+    .range-picker { position: relative; }
+    .range-inputs { display:flex; align-items:center; gap: 8px; }
+    .range-inputs input { width: 155px; }
+    .range-inputs span { color: #666; }
+    .range-calendar {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 10;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      width: 600px; /* Increased for 2 months */
+      display: none;
+      color: #333; /* Default text color for calendar */
+    }
+    .range-calendar.open { display: block; }
+    .range-cal-header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    
+    .range-cal-nav { 
+      background: #fff; 
+      border: 1px solid #ddd; 
+      border-radius: 50%; 
+      width: 32px; 
+      height: 32px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: pointer; 
+      transition: background 0.2s; 
+      color: #333; /*  Override theme.css white text */
+    }
+    .range-cal-nav:hover { background: #f5f5f5; color: #000; }
+    
+    .range-months-container { display: flex; gap: 24px; }
+    .range-month { flex: 1; }
+    .range-cal-title { font-weight: 600; font-size: 15px; text-align: center; margin-bottom: 12px; color: #1a1a1a; }
+    
+    .range-cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .range-cal-dow { font-size: 11px; color: #666; text-align:center; padding: 4px 0; font-weight: 500; }
+    
+    .range-cal-day {
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      height: 36px;
+      width: 100%;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: #333; /* Override theme.css white text */
+    }
+    .range-cal-day:hover { background: #f0f0f0; border-radius: 50%; color: #000; } /* Hover on single day */
+    
+    .range-cal-day.is-out { visibility: hidden; pointer-events: none; } /* Hide days outside month */
+    .range-cal-day.is-today { font-weight: bold; color: #0066cc; }
+    
+    .range-cal-day.in-range { background: #ebf5ff; border-radius: 0; color: #333; }
+    .range-cal-day.in-range:hover { background: #ebf5ff; } /* maintain background in range */
+
+    /* Start and End styling */
+    .range-cal-day.is-start { background: #0066cc; color: #fff; border-radius: 50% 0 0 50%; position: relative; z-index: 1; }
+    .range-cal-day.is-end { background: #0066cc; color: #fff; border-radius: 0 50% 50% 0; position: relative; z-index: 1; }
+    .range-cal-day.is-start.is-end { border-radius: 50%; } /* Single day range */
+
+    /* Fix hover/selection for start/end to look like a circle */
+    .range-cal-day.is-start::before, .range-cal-day.is-end::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 50%;
+        background: #0066cc;
+        z-index: -1;
+    }
+
+    .range-cal-actions { display:flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid #eee; padding-top: 12px; }
+    .range-cal-actions button { font-size: 13px; padding: 6px 12px; border-radius: 6px; border: none; font-weight: 500; }
+    #calClear { background: transparent; color: #666; text-decoration: underline; }
+    #calApply { background: #1a1a1a; color: white; } /* Keep white text for primary button */
+    </style>
+</head>
+<body></body>
+</html>

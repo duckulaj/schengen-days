@@ -7,23 +7,7 @@
   <meta name="_csrf" th:content="${_csrf.token}"/>
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <link rel="stylesheet" th:href="@{/css/theme.css}"/>
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; padding: 0 16px; }
-    .row { display: flex; gap: var(--row-gap); flex-wrap: wrap; align-items: end; }
-    label { display: block; font-size: 14px; margin-bottom: 6px; }
-    input, select { padding: 8px; font-size: 14px; }
-    button { padding: 9px 12px; font-size: 14px; cursor: pointer; }
-    /* .card styles removed here as they are now in theme.css */
-    .stat { font-size: 18px; }
-    .error { color: #b00020; white-space: pre-wrap; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; vertical-align: top; }
-    .muted { color: #666; font-size: 13px; }
-    .pager { display:flex; gap: 8px; align-items:center; margin-top: 10px; }
-    .actions { display:flex; gap: 8px; flex-wrap: wrap; }
-    .pill { display:inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
-    .inline-input { width: 155px; }
-  </style>
+  <style th:replace="~{fragments/calendar-style :: style}"></style>
 </head>
 <body>
 <h1>Schengen 90/180 calculator</h1>
@@ -67,12 +51,34 @@
   <h2>Add a stay</h2>
   <div class="row">
     <div>
-      <label for="entryDate">Entry</label>
-      <input id="entryDate" type="date"/>
-    </div>
-    <div>
-      <label for="exitDate">Exit</label>
-      <input id="exitDate" type="date"/>
+      <label for="entryDate">Stay dates</label>
+      <div class="range-picker" id="rangePicker">
+        <div class="range-inputs">
+          <input id="entryDate" type="text" placeholder="Start date" readonly/>
+          <span>→</span>
+          <input id="exitDate" type="text" placeholder="End date" readonly/>
+        </div>
+        <div id="rangeCalendar" class="range-calendar" aria-hidden="true">
+          <div class="range-cal-header">
+            <button type="button" class="range-cal-nav" id="calPrev">❮</button>
+            <button type="button" class="range-cal-nav" id="calNext">❯</button>
+          </div>
+          <div class="range-months-container">
+              <div class="range-month">
+                  <div class="range-cal-title" id="calTitle1">Month YYYY</div>
+                  <div class="range-cal-grid" id="calGrid1"></div>
+              </div>
+              <div class="range-month">
+                  <div class="range-cal-title" id="calTitle2">Month YYYY</div>
+                  <div class="range-cal-grid" id="calGrid2"></div>
+              </div>
+          </div>
+          <div class="range-cal-actions">
+            <button type="button" id="calClear">Clear</button>
+            <button type="button" id="calApply">Apply</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div>
       <button id="saveBtn" type="button">Save stay</button>
@@ -108,266 +114,7 @@
   </div>
 </div>
 
-<script>
-  const referenceDateEl = document.getElementById('referenceDate');
-  const usedEl = document.getElementById('used');
-  const remainingEl = document.getElementById('remaining');
-  const nextEntryEl = document.getElementById('nextEntry');
-  const whoEl = document.getElementById('who');
-
-  const entryEl = document.getElementById('entryDate');
-  const exitEl = document.getElementById('exitDate');
-
-  const statusErrorEl = document.getElementById('statusError');
-  const saveErrorEl = document.getElementById('saveError');
-  const staysTableEl = document.getElementById('staysTable');
-
-  const pageSizeEl = document.getElementById('pageSize');
-  const pageInfoEl = document.getElementById('pageInfo');
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
-
-  let page = 0;
-  let totalPages = 0;
-
-  referenceDateEl.valueAsDate = new Date();
-
-  function csrfHeaders() {
-    const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-    const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-    return { [header]: token };
-  }
-
-  function getReferenceDate() {
-    const v = referenceDateEl.value;
-    if (!v) throw new Error("Please set a reference date.");
-    return v;
-  }
-
-  function formatApiError(errObj) {
-    if (!errObj) return "Unknown error";
-    let msg = errObj.message || "Request failed";
-    if (Array.isArray(errObj.fieldErrors) && errObj.fieldErrors.length) {
-      msg += "\n" + errObj.fieldErrors.map(f => `• ${f.field}: ${f.message}`).join("\n");
-    }
-    return msg;
-  }
-
-  async function fetchJsonOrThrow(res) {
-    const ct = res.headers.get("content-type") || "";
-    if (res.ok) {
-      return ct.includes("application/json") ? await res.json() : null;
-    }
-    if (ct.includes("application/json")) {
-      const err = await res.json();
-      throw new Error(formatApiError(err));
-    }
-    throw new Error(await res.text());
-  }
-
-  async function refreshStatus() {
-    statusErrorEl.textContent = "";
-    try {
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/status?referenceDate=${encodeURIComponent(ref)}`);
-      const data = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = data.usedDaysLast180;
-      remainingEl.textContent = data.remainingDays;
-      nextEntryEl.textContent = data.nextLegalEntryDate;
-      whoEl.textContent = `user: ${data.userKey}`;
-    } catch (e) {
-      statusErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  function rowViewModeHtml(s) {
-    return `
-      <tr data-id="${s.id}" data-mode="view">
-        <td>${s.entryDate}</td>
-        <td>${s.exitDate}</td>
-        <td class="actions">
-          <button type="button" class="editBtn">Edit</button>
-          <button type="button" class="deleteBtn">Delete</button>
-        </td>
-      </tr>
-    `;
-  }
-
-  function rowEditModeHtml(s) {
-    return `
-      <tr data-id="${s.id}" data-mode="edit">
-        <td><input class="inline-input entryEdit" type="date" value="${s.entryDate}"/></td>
-        <td><input class="inline-input exitEdit" type="date" value="${s.exitDate}"/></td>
-        <td class="actions">
-          <button type="button" class="saveEditBtn">Save</button>
-          <button type="button" class="cancelEditBtn">Cancel</button>
-        </td>
-      </tr>
-    `;
-  }
-
-  async function loadStays() {
-    saveErrorEl.textContent = "";
-    try {
-      const size = parseInt(pageSizeEl.value, 10) || 10;
-      const res = await fetch(`/api/stays?page=${page}&size=${size}`);
-      const data = await fetchJsonOrThrow(res);
-
-      totalPages = data.totalPages;
-      staysTableEl.innerHTML = data.content.map(rowViewModeHtml).join("");
-
-      const from = data.totalElements === 0 ? 0 : (data.page * data.size + 1);
-      const to = Math.min(data.totalElements, (data.page + 1) * data.size);
-      pageInfoEl.textContent = `Page ${data.page + 1}/${Math.max(1, data.totalPages)} — showing ${from}-${to} of ${data.totalElements}`;
-
-      prevBtn.disabled = (page <= 0);
-      nextBtn.disabled = (page + 1 >= data.totalPages);
-
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  async function saveStay() {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      const ref = getReferenceDate();
-      const entry = entryEl.value;
-      const exit = exitEl.value;
-
-      if (!entry || !exit) throw new Error("Please enter both entry and exit dates.");
-      if (exit < entry) throw new Error("Exit date cannot be before entry date.");
-
-      const res = await fetch(`/api/stays?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ entryDate: entry, exitDate: exit })
-      });
-
-      const status = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
-      whoEl.textContent = `user: ${status.userKey}`;
-
-      await loadStays();
-      entryEl.value = "";
-      exitEl.value = "";
-
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  async function deleteStay(id) {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      if (!confirm("Delete this stay?")) return;
-
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'DELETE',
-        headers: { ...csrfHeaders() }
-      });
-      const status = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
-
-      await loadStays();
-      if (page > 0 && staysTableEl.children.length === 0) {
-        page--;
-        await loadStays();
-      }
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  async function saveEdit(id, newEntry, newExit) {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      if (!newEntry || !newExit) throw new Error("Both dates required.");
-      if (newExit < newEntry) throw new Error("Exit date cannot be before entry date.");
-
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ entryDate: newEntry, exitDate: newExit })
-      });
-      const status = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
-
-      await loadStays();
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  staysTableEl.addEventListener('click', async (evt) => {
-    const btn = evt.target;
-    if (!(btn instanceof HTMLElement)) return;
-    const tr = btn.closest('tr');
-    if (!tr) return;
-
-    const id = tr.getAttribute('data-id');
-    if (!id) return;
-
-    if (btn.classList.contains('deleteBtn')) {
-      await deleteStay(id);
-      return;
-    }
-
-    if (btn.classList.contains('editBtn')) {
-      const entry = tr.children[0].textContent.trim();
-      const exit = tr.children[1].textContent.trim();
-      tr.outerHTML = rowEditModeHtml({ id: Number(id), entryDate: entry, exitDate: exit });
-      return;
-    }
-
-    if (btn.classList.contains('cancelEditBtn')) {
-      const entry = tr.querySelector('.entryEdit')?.value || "";
-      const exit = tr.querySelector('.exitEdit')?.value || "";
-      tr.outerHTML = rowViewModeHtml({ id: Number(id), entryDate: entry, exitDate: exit });
-      return;
-    }
-
-    if (btn.classList.contains('saveEditBtn')) {
-      const newEntry = tr.querySelector('.entryEdit')?.value || "";
-      const newExit = tr.querySelector('.exitEdit')?.value || "";
-      await saveEdit(id, newEntry, newExit);
-      return;
-    }
-  });
-
-  document.getElementById('saveBtn').addEventListener('click', saveStay);
-  document.getElementById('refreshBtn').addEventListener('click', refreshStatus);
-
-  pageSizeEl.addEventListener('change', async () => {
-    page = 0;
-    await loadStays();
-  });
-  prevBtn.addEventListener('click', async () => {
-    if (page > 0) page--;
-    await loadStays();
-  });
-  nextBtn.addEventListener('click', async () => {
-    if (page + 1 < totalPages) page++;
-    await loadStays();
-  });
-
-  loadStays().then(refreshStatus);
-</script>
+<script th:replace="~{fragments/index-script :: script}"></script>
 <script th:src="@{/js/theme-toggle.js}"></script>
 </body>
 </html>
