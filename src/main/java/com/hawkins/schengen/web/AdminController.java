@@ -3,6 +3,7 @@ package com.hawkins.schengen.web;
 import com.hawkins.schengen.user.UserEntity;
 import com.hawkins.schengen.user.UserService;
 import com.hawkins.schengen.user.UserRepository;
+import org.eclipse.jdt.annotation.NonNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -48,14 +49,14 @@ public class AdminController {
     }
 
     @GetMapping("/users/{id}/edit")
-    public String showEditUserForm(@PathVariable Long id, Model model) {
+    public String showEditUserForm(@PathVariable @NonNull Long id, Model model) {
         UserEntity user = users.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
         model.addAttribute("user", user);
         return "user-edit";
     }
 
     @PostMapping("/users/{id}/edit")
-    public String updateUser(@PathVariable Long id,
+    public String updateUser(@PathVariable @NonNull Long id,
             @RequestParam String email,
             @RequestParam String role,
             @RequestParam(required = false, defaultValue = "false") boolean enabled,
@@ -72,7 +73,7 @@ public class AdminController {
     }
 
     @PostMapping("/users/{id}/delete")
-    public String deleteUser(@PathVariable Long id, RedirectAttributes ra) {
+    public String deleteUser(@PathVariable @NonNull Long id, RedirectAttributes ra) {
         try {
             userService.deleteUser(id);
             ra.addFlashAttribute("success", "User deleted successfully.");

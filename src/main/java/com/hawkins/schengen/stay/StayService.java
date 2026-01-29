@@ -2,6 +2,7 @@ package com.hawkins.schengen.stay;
 
 import com.hawkins.schengen.engine.SchengenEngine;
 import com.hawkins.schengen.web.dto.StatusResponse;
+import org.eclipse.jdt.annotation.NonNull;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,8 @@ public class StayService {
     public StatusResponse update(String userKey, long id, LocalDate referenceDate, LocalDate entry, LocalDate exit) {
         validateRange(entry, exit);
         StayEntity s = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Stay not found"));
-        if (!s.getUserKey().equals(userKey)) throw new IllegalArgumentException("Not allowed");
+        if (!s.getUserKey().equals(userKey))
+            throw new IllegalArgumentException("Not allowed");
         validateNoOverlapUpdate(userKey, id, entry, exit);
         s.setEntryDate(entry);
         s.setExitDate(exit);
@@ -40,7 +42,8 @@ public class StayService {
     @Transactional
     public StatusResponse delete(String userKey, long id, LocalDate referenceDate) {
         StayEntity s = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Stay not found"));
-        if (!s.getUserKey().equals(userKey)) throw new IllegalArgumentException("Not allowed");
+        if (!s.getUserKey().equals(userKey))
+            throw new IllegalArgumentException("Not allowed");
         repo.delete(s);
         return computeStatus(userKey, referenceDate);
     }
@@ -58,7 +61,7 @@ public class StayService {
     }
 
     private StatusResponse computeStatus(String userKey, LocalDate referenceDate) {
-        List<SchengenEngine.Stay> stays = repo.findByUserKey(userKey).stream()
+        List<SchengenEngine.@NonNull Stay> stays = repo.findByUserKey(userKey).stream()
                 .map(e -> new SchengenEngine.Stay(e.getEntryDate(), e.getExitDate()))
                 .toList();
 
@@ -70,7 +73,8 @@ public class StayService {
     }
 
     private static void validateRange(LocalDate entry, LocalDate exit) {
-        if (exit.isBefore(entry)) throw new IllegalArgumentException("exitDate cannot be before entryDate");
+        if (exit.isBefore(entry))
+            throw new IllegalArgumentException("exitDate cannot be before entryDate");
     }
 
     private void validateNoOverlapCreate(String userKey, LocalDate entry, LocalDate exit) {

@@ -1,6 +1,7 @@
 package com.hawkins.schengen.user;
 
 import com.hawkins.schengen.web.dto.RegisterRequest;
+import org.eclipse.jdt.annotation.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +42,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUser(Long id, String email, String role, boolean enabled, String password) {
+    public void updateUser(@NonNull Long id, String email, String role, boolean enabled, String password) {
         UserEntity user = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         email = email.trim();
@@ -61,7 +62,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(Long id) {
+    public void deleteUser(@NonNull Long id) {
         if (!repo.existsById(id)) {
             throw new IllegalArgumentException("User not found");
         }
