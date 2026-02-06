@@ -175,3 +175,33 @@ table th {
   font-size: 13px;
   color: var(--text-secondary);
 }
+
+.icon-btn {
+  background: none;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.icon-btn:hover {
+  background-color: var(--bg-secondary);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--text-secondary);
+  transition: fill 0.2s ease;
+}
+
+.icon-btn:hover svg {
+  fill: var(--accent-primary);
+}
+
+.icon-btn.deleteBtn:hover svg {
+  fill: var(--error-color);
+}

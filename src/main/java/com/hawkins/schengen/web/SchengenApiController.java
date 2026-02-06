@@ -50,7 +50,10 @@ public class SchengenApiController {
         Page<StayEntity> p = service.page(principal.getName(), page, size);
 
         var rows = p.getContent().stream()
-                .map(s -> new StayRowResponse(s.getId(), s.getEntryDate(), s.getExitDate()))
+                .map(s -> {
+                    long d = java.time.temporal.ChronoUnit.DAYS.between(s.getEntryDate(), s.getExitDate()) + 1;
+                    return new StayRowResponse(s.getId(), s.getEntryDate(), s.getExitDate(), d);
+                })
                 .toList();
 
         return new PagedStaysResponse<>(rows, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
