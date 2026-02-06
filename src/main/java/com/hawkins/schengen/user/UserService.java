@@ -35,6 +35,11 @@ public class UserService {
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             throw new IllegalArgumentException("Please enter a valid email address.");
         }
+        if (repo.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email already in use.");
+        }
+        validateRole(role);
+        PasswordPolicy.check(password);
 
         UserEntity user = new UserEntity(username, encoder.encode(password), role);
         user.setEmail(email);
@@ -49,12 +54,17 @@ public class UserService {
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
             throw new IllegalArgumentException("Please enter a valid email address.");
         }
+        if (repo.existsByEmailAndIdNot(email, id)) {
+            throw new IllegalArgumentException("Email already in use.");
+        }
 
         user.setEmail(email);
+        validateRole(role);
         user.setRole(role);
         user.setEnabled(enabled);
 
         if (password != null && !password.isBlank()) {
+            PasswordPolicy.check(password);
             user.setPasswordHash(encoder.encode(password));
         }
 
@@ -67,5 +77,11 @@ public class UserService {
             throw new IllegalArgumentException("User not found");
         }
         repo.deleteById(id);
+    }
+
+    private static void validateRole(String role) {
+        if (!"USER".equals(role) && !"ADMIN".equals(role)) {
+            throw new IllegalArgumentException("Invalid role.");
+        }
     }
 }

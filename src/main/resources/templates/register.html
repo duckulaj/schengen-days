@@ -22,6 +22,7 @@
     <div class="msg" th:if="${registerError}" th:text="${registerError}"></div>
 
     <form th:action="@{/register}" method="post" th:object="${form}">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
       <div class="msg" th:if="${#fields.hasErrors('*')}">
         Please fix the highlighted fields.
       </div>
