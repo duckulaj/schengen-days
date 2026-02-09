@@ -74,7 +74,6 @@ public final class SchengenEngine {
         }
     }
 
-    @SuppressWarnings("null")
     public static MergedStays preprocess(List<@NonNull Stay> stays) {
         if (stays == null || stays.isEmpty())
             return new MergedStays(new LocalDate[0], new LocalDate[0], new long[0]);
@@ -125,14 +124,21 @@ public final class SchengenEngine {
         return Math.max(0, 90 - used);
     }
 
-    /** Works even if there are future stays (not monotone). */
+    /** Optimized: jump past the earliest overlapping interval end when over limit. Works even if there are future stays. */
     public static LocalDate nextLegalEntryDate(MergedStays merged, LocalDate referenceDate) {
         LocalDate d = referenceDate;
         LocalDate max = referenceDate.plusYears(2);
         while (!d.isAfter(max)) {
-            if (usedDaysLast180(merged, d) <= 89)
+            if (usedDaysLast180(merged, d) <= 90)
                 return d;
-            d = d.plusDays(1);
+            LocalDate winStart = d.minusDays(179);
+            int l = merged.firstIntervalWithEndGte(winStart);
+            if (l == -1) {
+                d = d.plusDays(1);
+            } else {
+                LocalDate jump = merged.ends[l].plusDays(1);
+                d = !jump.isAfter(d) ? d.plusDays(1) : jump;
+            }
         }
         return max.plusDays(1);
     }

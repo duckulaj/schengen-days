@@ -1,10 +1,14 @@
 package com.hawkins.schengen.app;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+@Validated
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
     private String baseUrl = "http://localhost:8080";
@@ -19,6 +23,7 @@ public class AppProperties {
     public static class Seed {
         private boolean enabled = false;
         private final Admin admin = new Admin();
+        @NotNull
         private List<DemoUser> demoUsers = new ArrayList<>();
 
         public boolean isEnabled() { return enabled; }
@@ -28,7 +33,9 @@ public class AppProperties {
         public void setDemoUsers(List<DemoUser> demoUsers) { this.demoUsers = demoUsers; }
 
         public static class Admin {
+            @NotBlank
             private String username;
+            @NotBlank
             private String password;
             public String getUsername() { return username; }
             public void setUsername(String username) { this.username = username; }
@@ -37,7 +44,9 @@ public class AppProperties {
         }
 
         public static class DemoUser {
+            @NotBlank
             private String username;
+            @NotBlank
             private String password;
             public String getUsername() { return username; }
             public void setUsername(String username) { this.username = username; }
@@ -48,6 +57,7 @@ public class AppProperties {
 
     public static class Mail {
         private boolean enabled = false;
+        @NotBlank
         private String from;
 
         public boolean isEnabled() { return enabled; }

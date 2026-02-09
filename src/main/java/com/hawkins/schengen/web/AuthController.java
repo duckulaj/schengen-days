@@ -32,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String registerSubmit(@ModelAttribute("form") @Valid RegisterRequest form,
+    public String registerSubmit(@ModelAttribute @Valid RegisterRequest form,
                                  BindingResult binding,
                                  Model model) {
         if (binding.hasErrors()) return "register";

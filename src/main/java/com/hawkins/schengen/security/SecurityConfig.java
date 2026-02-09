@@ -55,8 +55,8 @@ public class SecurityConfig {
                 return http.build();
         }
 
-        @Bean
-        public UserDetailsService userDetailsService(UserRepository users) {
+    @Bean
+    UserDetailsService userDetailsService(UserRepository users) {
                 return username -> users.findByUsername(username)
                                 .map(u -> User.withUsername(u.getUsername())
                                                 .password(u.getPasswordHash())
@@ -66,13 +66,13 @@ public class SecurityConfig {
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
+    @Bean
+    PasswordEncoder passwordEncoder() {
                 return new BCryptPasswordEncoder();
         }
 
-        @Bean
-        public PersistentTokenRepository persistentTokenRepository(JdbcTemplate jdbcTemplate) {
+    @Bean
+    PersistentTokenRepository persistentTokenRepository(JdbcTemplate jdbcTemplate) {
                 JdbcTokenRepositoryImpl repo = new JdbcTokenRepositoryImpl();
                 repo.setJdbcTemplate(jdbcTemplate);
                 return repo;
