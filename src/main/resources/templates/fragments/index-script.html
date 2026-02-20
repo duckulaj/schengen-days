@@ -1,264 +1,305 @@
-<!DOCTYPE html>
+<!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
-<body>
-<script th:fragment="script">
-  const referenceDateEl = document.getElementById('referenceDate');
-  const usedEl = document.getElementById('used');
-  const remainingEl = document.getElementById('remaining');
-  const nextEntryEl = document.getElementById('nextEntry');
-  const whoEl = document.getElementById('who');
+  <body>
+    <script th:fragment="script">
+      const referenceDateEl = document.getElementById("referenceDate");
+      const usedEl = document.getElementById("used");
+      const remainingEl = document.getElementById("remaining");
+      const nextEntryEl = document.getElementById("nextEntry");
+      const whoEl = document.getElementById("who");
 
-  const entryEl = document.getElementById('entryDate');
-  const exitEl = document.getElementById('exitDate');
-  const rangePickerEl = document.getElementById('rangePicker');
-  const rangeCalEl = document.getElementById('rangeCalendar');
-  const calGrid1El = document.getElementById('calGrid1');
-  const calGrid2El = document.getElementById('calGrid2');
-  const calTitle1El = document.getElementById('calTitle1');
-  const calTitle2El = document.getElementById('calTitle2');
-  const calPrevBtn = document.getElementById('calPrev');
-  const calNextBtn = document.getElementById('calNext');
-  const calClearBtn = document.getElementById('calClear');
-  const calApplyBtn = document.getElementById('calApply');
+      const entryEl = document.getElementById("entryDate");
+      const exitEl = document.getElementById("exitDate");
+      const rangePickerEl = document.getElementById("rangePicker");
+      const rangeCalEl = document.getElementById("rangeCalendar");
+      const calGrid1El = document.getElementById("calGrid1");
+      const calGrid2El = document.getElementById("calGrid2");
+      const calTitle1El = document.getElementById("calTitle1");
+      const calTitle2El = document.getElementById("calTitle2");
+      const calPrevBtn = document.getElementById("calPrev");
+      const calNextBtn = document.getElementById("calNext");
+      const calClearBtn = document.getElementById("calClear");
+      const calApplyBtn = document.getElementById("calApply");
 
-  const statusErrorEl = document.getElementById('statusError');
-  const saveErrorEl = document.getElementById('saveError');
-  const staysTableEl = document.getElementById('staysTable');
+      const statusErrorEl = document.getElementById("statusError");
+      const saveErrorEl = document.getElementById("saveError");
+      const staysTableEl = document.getElementById("staysTable");
 
-  const pageSizeEl = document.getElementById('pageSize');
-  const pageInfoEl = document.getElementById('pageInfo');
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
+      const pageSizeEl = document.getElementById("pageSize");
+      const pageInfoEl = document.getElementById("pageInfo");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
 
-  let page = 0;
-  let totalPages = 0;
+      let page = 0;
+      let totalPages = 0;
 
-  referenceDateEl.valueAsDate = new Date();
+      referenceDateEl.valueAsDate = new Date();
 
-  let rangeStart = null;
-  let rangeEnd = null;
-  // viewDate points to the first month of the two visible
-  let viewDate = new Date();
-  viewDate.setDate(1); // ensure we are at start of month
+      let rangeStart = null;
+      let rangeEnd = null;
+      // viewDate points to the first month of the two visible
+      let viewDate = new Date();
+      viewDate.setDate(1); // ensure we are at start of month
 
-  const DOW = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+      const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  function pad2(n) {
-    return String(n).padStart(2, "0");
-  }
-
-  function formatLocalDate(d) {
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-  }
-
-  function parseLocalDate(v) {
-    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-    const [y, m, d] = v.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }
-
-  function isSameDay(a, b) {
-    return a && b &&
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
-  }
-
-  function isBefore(a, b) {
-    return a.getTime() < b.getTime();
-  }
-
-  // Inclusive range check
-  function inRange(d, start, end) {
-    if (!start || !end) return false;
-    // Normalize to midnight for comparison to avoid time issues, although our dates should be 00:00:00
-    const t = d.getTime();
-    return t >= start.getTime() && t <= end.getTime();
-  }
-
-  function setInputsFromRange() {
-    entryEl.value = rangeStart ? formatLocalDate(rangeStart) : "";
-    exitEl.value = rangeEnd ? formatLocalDate(rangeEnd) : "";
-  }
-
-  function openCalendar() {
-    rangeCalEl.classList.add("open");
-    rangeCalEl.setAttribute("aria-hidden", "false");
-    renderCalendar();
-  }
-
-  function closeCalendar() {
-    rangeCalEl.classList.remove("open");
-    rangeCalEl.setAttribute("aria-hidden", "true");
-  }
-
-  function createMonthGrid(year, month, gridEl, titleEl) {
-    const first = new Date(year, month, 1);
-    const startDay = first.getDay(); // 0=Su, 1=Mo, ...
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    titleEl.textContent = first.toLocaleString(undefined, { month: "long", year: "numeric" });
-    gridEl.innerHTML = "";
-
-    // Header row
-    DOW.forEach(d => {
-      const el = document.createElement("div");
-      el.className = "range-cal-dow";
-      el.textContent = d;
-      gridEl.appendChild(el);
-    });
-
-    const totalCells = 42; // 6 rows * 7 cols
-    for (let i = 0; i < totalCells; i++) {
-      const dayIndex = i - startDay + 1;
-      
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "range-cal-day";
-      
-      if (dayIndex >= 1 && dayIndex <= daysInMonth) {
-        const date = new Date(year, month, dayIndex);
-        btn.textContent = String(dayIndex);
-        btn.dataset.date = formatLocalDate(date);
-        
-        if (isSameDay(date, new Date())) btn.classList.add("is-today");
-        if (isSameDay(date, rangeStart)) btn.classList.add("is-start");
-        if (isSameDay(date, rangeEnd)) btn.classList.add("is-end");
-        if (inRange(date, rangeStart, rangeEnd)) btn.classList.add("in-range");
-      } else {
-        btn.textContent = "";
-        btn.classList.add("is-out");
-        // Could populate previous/next month dates if desired, 
-        // but typically hidden in this style or grayed out. 
-        // We'll hide them for clarity in 2-month view or just leave blank.
+      function pad2(n) {
+        return String(n).padStart(2, "0");
       }
-      gridEl.appendChild(btn);
-    }
-  }
 
-  function renderCalendar() {
-     // Month 1
-     createMonthGrid(viewDate.getFullYear(), viewDate.getMonth(), calGrid1El, calTitle1El);
-     
-     // Month 2
-     // logic to handle December rollover
-     let nextMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
-     createMonthGrid(nextMonth.getFullYear(), nextMonth.getMonth(), calGrid2El, calTitle2El);
-  }
-
-  function handleDateClick(dateStr) {
-    const d = parseLocalDate(dateStr);
-    if (!d) return;
-
-    if (!rangeStart || (rangeStart && rangeEnd)) {
-      // Start new range
-      rangeStart = d;
-      rangeEnd = null;
-    } else if (rangeStart && !rangeEnd) {
-      // Complete the range
-      if (isBefore(d, rangeStart)) {
-        rangeEnd = rangeStart; // swap
-        rangeStart = d;
-      } else {
-        rangeEnd = d;
+      function formatLocalDate(d) {
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
       }
-    }
 
-    setInputsFromRange();
-    renderCalendar();
-    
-    // Auto-close if full range selected? 
-    // Usually holiday sites keep it open until you click Apply, 
-    // or close immediately. Let's keep it consistent:
-    // If we just gathered the second date, maybe verify content and close or wait for apply.
-    // The previous code closed on range completion. Let's stick effectively to that but maybe give a visual cue.
-    // Actually common pattern:
-    // Click 1: Highlight start.
-    // Hover: Highlight range.
-    // Click 2: Fix range, maybe close.
-    // Let's NOT auto-close immediately to let user see what they picked, 
-    // BUT common UI closes or at least feels 'done'. 
-    // The "Apply" button is there for explicit confirmation or if they just wanted to change one thing.
-    // If I keep it open, the Apply button becomes meaningful.
-    // If I auto-close, Apply is redundant except for "I'm done looking".
-    // I'll auto close if both are set? No, let's wait for Apply or click outside.
-    // Actually, widespread behavior: closes on second click OR stays open.
-    // I'll leave it open so they can correct if they misclicked.
-  }
+      function parseLocalDate(v) {
+        if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+        const [y, m, d] = v.split("-").map(Number);
+        return new Date(y, m - 1, d);
+      }
 
-  function syncRangeFromInputs() {
-    const s = parseLocalDate(entryEl.value);
-    const e = parseLocalDate(exitEl.value);
-    
-    if (s) rangeStart = s;
-    if (e) rangeEnd = e;
-    
-    // If we have a start date, view that month. 
-    // If not, view current month.
-    if (rangeStart) {
-        viewDate = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
-    } else {
-        viewDate = new Date(); // now
-        viewDate.setDate(1);
-    }
-  }
+      function formatDisplayDate(isoStr) {
+        if (!isoStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return isoStr;
+        const [y, m, d] = isoStr.split("-");
+        return `${d}/${m}/${y}`;
+      }
 
-  function csrfHeaders() {
-    const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-    const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-    return { [header]: token };
-  }
+      function isSameDay(a, b) {
+        return (
+          a &&
+          b &&
+          a.getFullYear() === b.getFullYear() &&
+          a.getMonth() === b.getMonth() &&
+          a.getDate() === b.getDate()
+        );
+      }
 
-  function getReferenceDate() {
-    const v = referenceDateEl.value;
-    if (!v) throw new Error("Please set a reference date.");
-    return v;
-  }
-  
-  // ... (rest of API helpers same as before)
-  
-  function formatApiError(errObj) {
-    if (!errObj) return "Unknown error";
-    let msg = errObj.message || "Request failed";
-    if (Array.isArray(errObj.fieldErrors) && errObj.fieldErrors.length) {
-      msg += "\n" + errObj.fieldErrors.map(f => `• ${f.field}: ${f.message}`).join("\n");
-    }
-    return msg;
-  }
+      function isBefore(a, b) {
+        return a.getTime() < b.getTime();
+      }
 
-  async function fetchJsonOrThrow(res) {
-    const ct = res.headers.get("content-type") || "";
-    if (res.ok) {
-      return ct.includes("application/json") ? await res.json() : null;
-    }
-    if (ct.includes("application/json")) {
-      const err = await res.json();
-      throw new Error(formatApiError(err));
-    }
-    throw new Error(await res.text());
-  }
+      // Inclusive range check
+      function inRange(d, start, end) {
+        if (!start || !end) return false;
+        // Normalize to midnight for comparison to avoid time issues, although our dates should be 00:00:00
+        const t = d.getTime();
+        return t >= start.getTime() && t <= end.getTime();
+      }
 
-  async function refreshStatus() {
-    statusErrorEl.textContent = "";
-    try {
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/status?referenceDate=${encodeURIComponent(ref)}`);
-      const data = await fetchJsonOrThrow(res);
+      function setInputsFromRange() {
+        entryEl.value = rangeStart ? formatLocalDate(rangeStart) : "";
+        exitEl.value = rangeEnd ? formatLocalDate(rangeEnd) : "";
+      }
 
-      usedEl.textContent = data.usedDaysLast180;
-      remainingEl.textContent = data.remainingDays;
-      nextEntryEl.textContent = data.nextLegalEntryDate;
-      whoEl.textContent = `user: ${data.userKey}`;
-    } catch (e) {
-      statusErrorEl.textContent = e.message || String(e);
-    }
-  }
+      function openCalendar() {
+        rangeCalEl.classList.add("open");
+        rangeCalEl.setAttribute("aria-hidden", "false");
+        renderCalendar();
+      }
 
-  function rowViewModeHtml(s) {
-    return `
-      <tr data-id="${s.id}" data-mode="view">
-        <td>${s.entryDate}</td>
-        <td>${s.exitDate}</td>
+      function closeCalendar() {
+        rangeCalEl.classList.remove("open");
+        rangeCalEl.setAttribute("aria-hidden", "true");
+      }
+
+      function createMonthGrid(year, month, gridEl, titleEl) {
+        const first = new Date(year, month, 1);
+        const startDay = first.getDay(); // 0=Su, 1=Mo, ...
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        titleEl.textContent = first.toLocaleString(undefined, {
+          month: "long",
+          year: "numeric",
+        });
+        gridEl.innerHTML = "";
+
+        // Header row
+        DOW.forEach((d) => {
+          const el = document.createElement("div");
+          el.className = "range-cal-dow";
+          el.textContent = d;
+          gridEl.appendChild(el);
+        });
+
+        const totalCells = 42; // 6 rows * 7 cols
+        for (let i = 0; i < totalCells; i++) {
+          const dayIndex = i - startDay + 1;
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "range-cal-day";
+
+          if (dayIndex >= 1 && dayIndex <= daysInMonth) {
+            const date = new Date(year, month, dayIndex);
+            btn.textContent = String(dayIndex);
+            btn.dataset.date = formatLocalDate(date);
+
+            if (isSameDay(date, new Date())) btn.classList.add("is-today");
+            if (isSameDay(date, rangeStart)) btn.classList.add("is-start");
+            if (isSameDay(date, rangeEnd)) btn.classList.add("is-end");
+            if (inRange(date, rangeStart, rangeEnd))
+              btn.classList.add("in-range");
+          } else {
+            btn.textContent = "";
+            btn.classList.add("is-out");
+            // Could populate previous/next month dates if desired,
+            // but typically hidden in this style or grayed out.
+            // We'll hide them for clarity in 2-month view or just leave blank.
+          }
+          gridEl.appendChild(btn);
+        }
+      }
+
+      function renderCalendar() {
+        // Month 1
+        createMonthGrid(
+          viewDate.getFullYear(),
+          viewDate.getMonth(),
+          calGrid1El,
+          calTitle1El,
+        );
+
+        // Month 2
+        // logic to handle December rollover
+        let nextMonth = new Date(
+          viewDate.getFullYear(),
+          viewDate.getMonth() + 1,
+          1,
+        );
+        createMonthGrid(
+          nextMonth.getFullYear(),
+          nextMonth.getMonth(),
+          calGrid2El,
+          calTitle2El,
+        );
+      }
+
+      function handleDateClick(dateStr) {
+        const d = parseLocalDate(dateStr);
+        if (!d) return;
+
+        if (!rangeStart || (rangeStart && rangeEnd)) {
+          // Start new range
+          rangeStart = d;
+          rangeEnd = null;
+        } else if (rangeStart && !rangeEnd) {
+          // Complete the range
+          if (isBefore(d, rangeStart)) {
+            rangeEnd = rangeStart; // swap
+            rangeStart = d;
+          } else {
+            rangeEnd = d;
+          }
+        }
+
+        setInputsFromRange();
+        renderCalendar();
+
+        // Auto-close if full range selected?
+        // Usually holiday sites keep it open until you click Apply,
+        // or close immediately. Let's keep it consistent:
+        // If we just gathered the second date, maybe verify content and close or wait for apply.
+        // The previous code closed on range completion. Let's stick effectively to that but maybe give a visual cue.
+        // Actually common pattern:
+        // Click 1: Highlight start.
+        // Hover: Highlight range.
+        // Click 2: Fix range, maybe close.
+        // Let's NOT auto-close immediately to let user see what they picked,
+        // BUT common UI closes or at least feels 'done'.
+        // The "Apply" button is there for explicit confirmation or if they just wanted to change one thing.
+        // If I keep it open, the Apply button becomes meaningful.
+        // If I auto-close, Apply is redundant except for "I'm done looking".
+        // I'll auto close if both are set? No, let's wait for Apply or click outside.
+        // Actually, widespread behavior: closes on second click OR stays open.
+        // I'll leave it open so they can correct if they misclicked.
+      }
+
+      function syncRangeFromInputs() {
+        const s = parseLocalDate(entryEl.value);
+        const e = parseLocalDate(exitEl.value);
+
+        if (s) rangeStart = s;
+        if (e) rangeEnd = e;
+
+        // If we have a start date, view that month.
+        // If not, view current month.
+        if (rangeStart) {
+          viewDate = new Date(
+            rangeStart.getFullYear(),
+            rangeStart.getMonth(),
+            1,
+          );
+        } else {
+          viewDate = new Date(); // now
+          viewDate.setDate(1);
+        }
+      }
+
+      function csrfHeaders() {
+        const token = document
+          .querySelector('meta[name="_csrf"]')
+          .getAttribute("content");
+        const header = document
+          .querySelector('meta[name="_csrf_header"]')
+          .getAttribute("content");
+        return { [header]: token };
+      }
+
+      function getReferenceDate() {
+        const v = referenceDateEl.value;
+        if (!v) throw new Error("Please set a reference date.");
+        return v;
+      }
+
+      // ... (rest of API helpers same as before)
+
+      function formatApiError(errObj) {
+        if (!errObj) return "Unknown error";
+        let msg = errObj.message || "Request failed";
+        if (Array.isArray(errObj.fieldErrors) && errObj.fieldErrors.length) {
+          msg +=
+            "\n" +
+            errObj.fieldErrors
+              .map((f) => `• ${f.field}: ${f.message}`)
+              .join("\n");
+        }
+        return msg;
+      }
+
+      async function fetchJsonOrThrow(res) {
+        const ct = res.headers.get("content-type") || "";
+        if (res.ok) {
+          return ct.includes("application/json") ? await res.json() : null;
+        }
+        if (ct.includes("application/json")) {
+          const err = await res.json();
+          throw new Error(formatApiError(err));
+        }
+        throw new Error(await res.text());
+      }
+
+      async function refreshStatus() {
+        statusErrorEl.textContent = "";
+        try {
+          const ref = getReferenceDate();
+          const res = await fetch(
+            `/api/status?referenceDate=${encodeURIComponent(ref)}`,
+          );
+          const data = await fetchJsonOrThrow(res);
+
+          usedEl.textContent = data.usedDaysLast180;
+          remainingEl.textContent = data.remainingDays;
+          nextEntryEl.textContent = formatDisplayDate(data.nextLegalEntryDate);
+          whoEl.textContent = `user: ${data.userKey}`;
+        } catch (e) {
+          statusErrorEl.textContent = e.message || String(e);
+        }
+      }
+
+      function rowViewModeHtml(s) {
+        return `
+      <tr data-id="${s.id}" data-mode="view" data-entry="${s.entryDate}" data-exit="${s.exitDate}">
+        <td>${formatDisplayDate(s.entryDate)}</td>
+        <td>${formatDisplayDate(s.exitDate)}</td>
         <td>${s.days}</td>
         <td class="actions">
           <button type="button" class="icon-btn editBtn" title="Edit">
@@ -270,11 +311,11 @@
         </td>
       </tr>
     `;
-  }
+      }
 
-  function rowEditModeHtml(s) {
-    return `
-      <tr data-id="${s.id}" data-mode="edit">
+      function rowEditModeHtml(s) {
+        return `
+      <tr data-id="${s.id}" data-mode="edit" data-entry="${s.entryDate}" data-exit="${s.exitDate}">
         <td><input class="inline-input entryEdit" type="date" value="${s.entryDate}"/></td>
         <td><input class="inline-input exitEdit" type="date" value="${s.exitDate}"/></td>
         <td>-</td>
@@ -284,230 +325,256 @@
         </td>
       </tr>
     `;
-  }
-
-  async function loadStays() {
-    saveErrorEl.textContent = "";
-    try {
-      const size = parseInt(pageSizeEl.value, 10) || 10;
-      const res = await fetch(`/api/stays?page=${page}&size=${size}`);
-      const data = await fetchJsonOrThrow(res);
-
-      totalPages = data.totalPages;
-      staysTableEl.innerHTML = data.content.map(rowViewModeHtml).join("");
-
-      const from = data.totalElements === 0 ? 0 : (data.page * data.size + 1);
-      const to = Math.min(data.totalElements, (data.page + 1) * data.size);
-      pageInfoEl.textContent = `Page ${data.page + 1}/${Math.max(1, data.totalPages)} — showing ${from}-${to} of ${data.totalElements}`;
-
-      prevBtn.disabled = (page <= 0);
-      nextBtn.disabled = (page + 1 >= data.totalPages);
-
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  async function saveStay() {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      const ref = getReferenceDate();
-      const entry = entryEl.value;
-      const exit = exitEl.value;
-
-      if (!entry || !exit) throw new Error("Please enter both entry and exit dates.");
-      if (exit < entry) throw new Error("Exit date cannot be before entry date.");
-
-      const res = await fetch(`/api/stays?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ entryDate: entry, exitDate: exit })
-      });
-
-      const status = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
-      whoEl.textContent = `user: ${status.userKey}`;
-
-      await loadStays();
-      entryEl.value = "";
-      exitEl.value = "";
-       // Clear range after save
-      rangeStart = null;
-      rangeEnd = null;
-
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
-
-  async function deleteStay(id) {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      if (!confirm("Delete this stay?")) return;
-
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'DELETE',
-        headers: { ...csrfHeaders() }
-      });
-      const status = await fetchJsonOrThrow(res);
-
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
-
-      await loadStays();
-      if (page > 0 && staysTableEl.children.length === 0) {
-        page--;
-        await loadStays();
       }
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
 
-  async function saveEdit(id, newEntry, newExit) {
-    saveErrorEl.textContent = "";
-    statusErrorEl.textContent = "";
-    try {
-      if (!newEntry || !newExit) throw new Error("Both dates required.");
-      if (newExit < newEntry) throw new Error("Exit date cannot be before entry date.");
+      async function loadStays() {
+        saveErrorEl.textContent = "";
+        try {
+          const size = parseInt(pageSizeEl.value, 10) || 10;
+          const res = await fetch(`/api/stays?page=${page}&size=${size}`);
+          const data = await fetchJsonOrThrow(res);
 
-      const ref = getReferenceDate();
-      const res = await fetch(`/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ entryDate: newEntry, exitDate: newExit })
+          totalPages = data.totalPages;
+          staysTableEl.innerHTML = data.content.map(rowViewModeHtml).join("");
+
+          const from = data.totalElements === 0 ? 0 : data.page * data.size + 1;
+          const to = Math.min(data.totalElements, (data.page + 1) * data.size);
+          pageInfoEl.textContent = `Page ${data.page + 1}/${Math.max(1, data.totalPages)} — showing ${from}-${to} of ${data.totalElements}`;
+
+          prevBtn.disabled = page <= 0;
+          nextBtn.disabled = page + 1 >= data.totalPages;
+        } catch (e) {
+          saveErrorEl.textContent = e.message || String(e);
+        }
+      }
+
+      async function saveStay() {
+        saveErrorEl.textContent = "";
+        statusErrorEl.textContent = "";
+        try {
+          const ref = getReferenceDate();
+          const entry = entryEl.value;
+          const exit = exitEl.value;
+
+          if (!entry || !exit)
+            throw new Error("Please enter both entry and exit dates.");
+          if (exit < entry)
+            throw new Error("Exit date cannot be before entry date.");
+
+          const res = await fetch(
+            `/api/stays?referenceDate=${encodeURIComponent(ref)}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...csrfHeaders() },
+              body: JSON.stringify({ entryDate: entry, exitDate: exit }),
+            },
+          );
+
+          const status = await fetchJsonOrThrow(res);
+
+          usedEl.textContent = status.usedDaysLast180;
+          remainingEl.textContent = status.remainingDays;
+          nextEntryEl.textContent = formatDisplayDate(
+            status.nextLegalEntryDate,
+          );
+          whoEl.textContent = `user: ${status.userKey}`;
+
+          await loadStays();
+          entryEl.value = "";
+          exitEl.value = "";
+          // Clear range after save
+          rangeStart = null;
+          rangeEnd = null;
+        } catch (e) {
+          saveErrorEl.textContent = e.message || String(e);
+        }
+      }
+
+      async function deleteStay(id) {
+        saveErrorEl.textContent = "";
+        statusErrorEl.textContent = "";
+        try {
+          if (!confirm("Delete this stay?")) return;
+
+          const ref = getReferenceDate();
+          const res = await fetch(
+            `/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`,
+            {
+              method: "DELETE",
+              headers: { ...csrfHeaders() },
+            },
+          );
+          const status = await fetchJsonOrThrow(res);
+
+          usedEl.textContent = status.usedDaysLast180;
+          remainingEl.textContent = status.remainingDays;
+          nextEntryEl.textContent = formatDisplayDate(
+            status.nextLegalEntryDate,
+          );
+
+          await loadStays();
+          if (page > 0 && staysTableEl.children.length === 0) {
+            page--;
+            await loadStays();
+          }
+        } catch (e) {
+          saveErrorEl.textContent = e.message || String(e);
+        }
+      }
+
+      async function saveEdit(id, newEntry, newExit) {
+        saveErrorEl.textContent = "";
+        statusErrorEl.textContent = "";
+        try {
+          if (!newEntry || !newExit) throw new Error("Both dates required.");
+          if (newExit < newEntry)
+            throw new Error("Exit date cannot be before entry date.");
+
+          const ref = getReferenceDate();
+          const res = await fetch(
+            `/api/stays/${id}?referenceDate=${encodeURIComponent(ref)}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", ...csrfHeaders() },
+              body: JSON.stringify({ entryDate: newEntry, exitDate: newExit }),
+            },
+          );
+          const status = await fetchJsonOrThrow(res);
+
+          usedEl.textContent = status.usedDaysLast180;
+          remainingEl.textContent = status.remainingDays;
+          nextEntryEl.textContent = formatDisplayDate(
+            status.nextLegalEntryDate,
+          );
+
+          await loadStays();
+        } catch (e) {
+          saveErrorEl.textContent = e.message || String(e);
+        }
+      }
+
+      staysTableEl.addEventListener("click", async (evt) => {
+        const btn = evt.target;
+        if (!(btn instanceof HTMLElement)) return;
+        const tr = btn.closest("tr");
+        if (!tr) return;
+
+        const id = tr.getAttribute("data-id");
+        if (!id) return;
+
+        if (btn.classList.contains("deleteBtn")) {
+          await deleteStay(id);
+          return;
+        }
+
+        if (btn.classList.contains("editBtn")) {
+          const entry = tr.getAttribute("data-entry");
+          const exit = tr.getAttribute("data-exit");
+          tr.outerHTML = rowEditModeHtml({
+            id: Number(id),
+            entryDate: entry,
+            exitDate: exit,
+          });
+          return;
+        }
+
+        if (btn.classList.contains("cancelEditBtn")) {
+          const entry = tr.getAttribute("data-entry");
+          const exit = tr.getAttribute("data-exit");
+          tr.outerHTML = rowViewModeHtml({
+            id: Number(id),
+            entryDate: entry,
+            exitDate: exit,
+          });
+          return;
+        }
+
+        if (btn.classList.contains("saveEditBtn")) {
+          const newEntry = tr.querySelector(".entryEdit")?.value || "";
+          const newExit = tr.querySelector(".exitEdit")?.value || "";
+          await saveEdit(id, newEntry, newExit);
+          return;
+        }
       });
-      const status = await fetchJsonOrThrow(res);
 
-      usedEl.textContent = status.usedDaysLast180;
-      remainingEl.textContent = status.remainingDays;
-      nextEntryEl.textContent = status.nextLegalEntryDate;
+      document.getElementById("saveBtn").addEventListener("click", saveStay);
+      document
+        .getElementById("refreshBtn")
+        .addEventListener("click", refreshStatus);
 
-      await loadStays();
-    } catch (e) {
-      saveErrorEl.textContent = e.message || String(e);
-    }
-  }
+      entryEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        syncRangeFromInputs();
+        openCalendar();
+      });
 
-  staysTableEl.addEventListener('click', async (evt) => {
-    const btn = evt.target;
-    if (!(btn instanceof HTMLElement)) return;
-    const tr = btn.closest('tr');
-    if (!tr) return;
+      exitEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        syncRangeFromInputs();
+        openCalendar();
+      });
 
-    const id = tr.getAttribute('data-id');
-    if (!id) return;
+      // Listen on the whole calendar for day clicks
+      rangeCalEl.addEventListener("click", (e) => {
+        // Check if clicked a day
+        const btn = e.target.closest(".range-cal-day");
+        if (btn && !btn.classList.contains("is-out")) {
+          e.stopPropagation();
+          const dateStr = btn.dataset.date;
+          if (dateStr) handleDateClick(dateStr);
+        }
+      });
 
-    if (btn.classList.contains('deleteBtn')) {
-      await deleteStay(id);
-      return;
-    }
+      calPrevBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Move back 1 month
+        viewDate.setMonth(viewDate.getMonth() - 1);
+        renderCalendar();
+      });
 
-    if (btn.classList.contains('editBtn')) {
-      const entry = tr.children[0].textContent.trim();
-      const exit = tr.children[1].textContent.trim();
-      tr.outerHTML = rowEditModeHtml({ id: Number(id), entryDate: entry, exitDate: exit });
-      return;
-    }
+      calNextBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Move forward 1 month
+        viewDate.setMonth(viewDate.getMonth() + 1);
+        renderCalendar();
+      });
 
-    if (btn.classList.contains('cancelEditBtn')) {
-      const entry = tr.querySelector('.entryEdit')?.value || "";
-      const exit = tr.querySelector('.exitEdit')?.value || "";
-      tr.outerHTML = rowViewModeHtml({ id: Number(id), entryDate: entry, exitDate: exit });
-      return;
-    }
+      calClearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        rangeStart = null;
+        rangeEnd = null;
+        setInputsFromRange();
+        renderCalendar();
+      });
 
-    if (btn.classList.contains('saveEditBtn')) {
-      const newEntry = tr.querySelector('.entryEdit')?.value || "";
-      const newExit = tr.querySelector('.exitEdit')?.value || "";
-      await saveEdit(id, newEntry, newExit);
-      return;
-    }
-  });
+      calApplyBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // If half-selected, just finish it?
+        if (rangeStart && !rangeEnd) rangeEnd = rangeStart;
+        setInputsFromRange();
+        closeCalendar();
+      });
 
-  document.getElementById('saveBtn').addEventListener('click', saveStay);
-  document.getElementById('refreshBtn').addEventListener('click', refreshStatus);
+      document.addEventListener("click", (e) => {
+        if (!rangePickerEl.contains(e.target)) {
+          closeCalendar();
+        }
+      });
 
-  entryEl.addEventListener('click', (e) => {
-    e.stopPropagation();
-    syncRangeFromInputs();
-    openCalendar();
-  });
+      pageSizeEl.addEventListener("change", async () => {
+        page = 0;
+        await loadStays();
+      });
+      prevBtn.addEventListener("click", async () => {
+        if (page > 0) page--;
+        await loadStays();
+      });
+      nextBtn.addEventListener("click", async () => {
+        if (page + 1 < totalPages) page++;
+        await loadStays();
+      });
 
-  exitEl.addEventListener('click', (e) => {
-    e.stopPropagation();
-    syncRangeFromInputs();
-    openCalendar();
-  });
-
-  // Listen on the whole calendar for day clicks
-  rangeCalEl.addEventListener('click', (e) => {
-     // Check if clicked a day
-     const btn = e.target.closest('.range-cal-day');
-     if (btn && !btn.classList.contains('is-out')) {
-         e.stopPropagation();
-         const dateStr = btn.dataset.date;
-         if (dateStr) handleDateClick(dateStr);
-     }
-  });
-
-  calPrevBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Move back 1 month
-    viewDate.setMonth(viewDate.getMonth() - 1);
-    renderCalendar();
-  });
-
-  calNextBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Move forward 1 month
-    viewDate.setMonth(viewDate.getMonth() + 1);
-    renderCalendar();
-  });
-
-  calClearBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    rangeStart = null;
-    rangeEnd = null;
-    setInputsFromRange();
-    renderCalendar();
-  });
-
-  calApplyBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // If half-selected, just finish it? 
-    if (rangeStart && !rangeEnd) rangeEnd = rangeStart;
-    setInputsFromRange();
-    closeCalendar();
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!rangePickerEl.contains(e.target)) {
-      closeCalendar();
-    }
-  });
-
-  pageSizeEl.addEventListener('change', async () => {
-    page = 0;
-    await loadStays();
-  });
-  prevBtn.addEventListener('click', async () => {
-    if (page > 0) page--;
-    await loadStays();
-  });
-  nextBtn.addEventListener('click', async () => {
-    if (page + 1 < totalPages) page++;
-    await loadStays();
-  });
-
-  loadStays().then(refreshStatus);
-</script>
-</body>
+      loadStays().then(refreshStatus);
+    </script>
+  </body>
 </html>
